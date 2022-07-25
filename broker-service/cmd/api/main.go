@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-const webPort = "8002"
+const webPort = "8001"
 
 func main() {
 	app := &Config{}
@@ -49,7 +49,7 @@ func (app *Config) routes() http.Handler {
 
 	mux.Use(middleware.Heartbeat("/ping"))
 
-	mux.Post("/broke", app.Broker)
+	mux.Post("/", app.Broker)
 
 	return mux
 }
