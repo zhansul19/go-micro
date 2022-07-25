@@ -1,4 +1,4 @@
-module github.com/zhansul19/calendar/broker
+module github.com/zhansul19/go-micro/broker
 
 go 1.18
 
