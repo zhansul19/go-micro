@@ -25,5 +25,7 @@ func (c *Config) routes() http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
+	mux.Post("/Authenticate", c.Authenticate)
 	return mux
 }

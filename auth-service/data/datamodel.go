@@ -15,7 +15,7 @@ const dbTimeout = time.Second * 3
 var db *sql.DB
 
 type Models struct {
-	User User
+	User UserModel
 }
 
 //Create new Model
@@ -23,12 +23,12 @@ func New(dbPool *sql.DB) Models {
 	db = dbPool
 
 	return Models{
-		User: User{},
+		User: UserModel{},
 	}
 }
 
 // User is the structure which holds one user from the database.
-type User struct {
+type UserModel struct {
 	ID        int       `json:"id"`
 	Email     string    `json:"email"`
 	FirstName string    `json:"first_name,omitempty"`
@@ -40,7 +40,7 @@ type User struct {
 }
 
 // GetAll returns a slice of all users, sorted by last name
-func (u *User) GetAll() ([]*User, error) {
+func (u *UserModel) GetAll() ([]*UserModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -53,10 +53,10 @@ func (u *User) GetAll() ([]*User, error) {
 	}
 	defer rows.Close()
 
-	var users []*User
+	var users []*UserModel
 
 	for rows.Next() {
-		var user User
+		var user UserModel
 		err := rows.Scan(
 			&user.ID,
 			&user.Email,
@@ -79,13 +79,13 @@ func (u *User) GetAll() ([]*User, error) {
 }
 
 // GetByEmail returns one user by email
-func (u *User) GetByEmail(email string) (*User, error) {
+func (u *UserModel) GetByEmail(email string) (*UserModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	query := `select id, email, first_name, last_name, password, user_active, created_at, updated_at from users where email = $1`
 
-	var user User
+	var user UserModel
 	row := db.QueryRowContext(ctx, query, email)
 
 	err := row.Scan(
@@ -107,13 +107,13 @@ func (u *User) GetByEmail(email string) (*User, error) {
 }
 
 // GetOne returns one user by id
-func (u *User) GetOne(id int) (*User, error) {
+func (u *UserModel) GetOne(id int) (*UserModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	query := `select id, email, first_name, last_name, password, user_active, created_at, updated_at from users where id = $1`
 
-	var user User
+	var user UserModel
 	row := db.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
@@ -136,7 +136,7 @@ func (u *User) GetOne(id int) (*User, error) {
 
 // Update updates one user in the database, using the information
 // stored in the receiver u
-func (u *User) Update() error {
+func (u *UserModel) Update() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -166,7 +166,7 @@ func (u *User) Update() error {
 }
 
 // Delete deletes one user from the database, by User.ID
-func (u *User) Delete() error {
+func (u *UserModel) Delete() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -181,7 +181,7 @@ func (u *User) Delete() error {
 }
 
 // Insert inserts a new user into the database, and returns the ID of the newly inserted row
-func (u *User) Insert(user User) (int, error) {
+func (u *UserModel) Insert(user UserModel) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -212,7 +212,7 @@ func (u *User) Insert(user User) (int, error) {
 }
 
 // ResetPassword is the method we will use to change a user's password.
-func (u *User) ResetPassword(password string) error {
+func (u *UserModel) ResetPassword(password string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -233,7 +233,7 @@ func (u *User) ResetPassword(password string) error {
 // PasswordMatches uses Go's bcrypt package to compare a user supplied password
 // with the hash we have stored for a given user in the database. If the password
 // and hash match, we return true; otherwise, we return false.
-func (u *User) PasswordMatches(plainText string) (bool, error) {
+func (u *UserModel) PasswordMatches(plainText string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainText))
 	if err != nil {
 		switch {
