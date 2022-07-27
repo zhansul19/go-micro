@@ -21,7 +21,7 @@ func main() {
 		log.Panic("could't connect mongo")
 	}
 	client = conn
-	
+
 	//context in order to disconnect
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -31,4 +31,9 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	config:= &Config{
+		Models: database.New(client),
+	}
+	go config.serve()
 }
