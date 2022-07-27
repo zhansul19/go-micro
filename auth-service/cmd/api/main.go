@@ -9,7 +9,7 @@ import (
 	"github.com/zhansul19/go-micro/auth-service/database"
 )
 
-const webPort = "8001"
+const webPort = "80"
 
 func main() {
 	log.Printf("Connecting to auth service on port: %s \n", webPort)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/zhansul19/go-micro/auth-service/data"
@@ -25,7 +26,8 @@ func (c *Config) routes() http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	mux.Use(middleware.Heartbeat("/ping"))
 
-	mux.Post("/Authenticate", c.Authenticate)
+	mux.Post("/authenticate", c.Authenticate)
 	return mux
 }
