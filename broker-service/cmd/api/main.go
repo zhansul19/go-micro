@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-const webPort = "8001"
+const webPort = "80"
 
 func main() {
 	app := &Config{}

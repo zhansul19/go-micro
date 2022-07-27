@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
-
 type jsonResponse struct {
 	Error   bool   `json:"error"`
 	Message string `json:"message"`
@@ -50,4 +49,19 @@ func (c *Config) writeJson(wr http.ResponseWriter, code int, data interface{}, h
 	}
 
 	return nil
+}
+
+func (c *Config) errorJson(wr http.ResponseWriter, err error, code ...int) error {
+	statuscode := http.StatusBadRequest
+
+	if len(code) > 0 {
+		statuscode = code[0]
+	}
+
+	payload := jsonResponse{
+		Error:   true,
+		Message: err.Error(),
+	}
+
+	return c.writeJson(wr, statuscode, payload)
 }
