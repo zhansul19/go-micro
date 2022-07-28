@@ -3,38 +3,35 @@ package main
 import (
 	"net/http"
 
-	"github.com/zhansul19/log-service/database"
+	"github.com/zhansul19/go-micro/log-service/database"
 )
 
-type LogPayload struct {
+type JSONPayload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
 }
 
-func (c *Config) Writelog(wr http.ResponseWriter, r *http.Request) {
-	var logPayload LogPayload
+func (app *Config) WriteLog(w http.ResponseWriter, r *http.Request) {
+	// read json into var
+	var requestPayload JSONPayload
+	_ = app.readJSON(w, r, &requestPayload)
 
-	err := c.readJson(wr, r, &logPayload)
+	// insert data
+	event := database.LogEntry{
+		Name: requestPayload.Name,
+		Data: requestPayload.Data,
+	}
+
+	err := app.Models.LogEntry.Insert(event)
 	if err != nil {
-		c.errorJson(wr, err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	event:=database.LogEntry{
-		Name: logPayload.Name,
-		Data: logPayload.Data,
-	}
-
-	err=c.Models.LogEntry.Insert(event)
-	if err != nil {
-		c.errorJson(wr,err)
-		return
-	}
-	resp:=jsonResponse{
-		Error: false,
+	resp := jsonResponse{
+		Error:   false,
 		Message: "logged",
 	}
 
-	c.writeJson(wr,http.StatusOK,resp)
-
+	app.writeJSON(w, http.StatusAccepted, resp)
 }

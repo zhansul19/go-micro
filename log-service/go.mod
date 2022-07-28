@@ -1,4 +1,4 @@
-module github.com/zhansul19/log-service
+module github.com/zhansul19/go-micro/log-service
 
 go 1.18
 
