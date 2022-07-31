@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+
+	"github.com/zhansul19/go-micro/broker/event"
 )
 
 type RequestPayload struct {
@@ -35,7 +37,7 @@ func (c *Config) HandleSubmission(wr http.ResponseWriter, r *http.Request) {
 	case "auth":
 		c.authenticate(wr, requestPayload.Auth)
 	case "log":
-		c.logItem(wr, requestPayload.Log)
+		c.logItemViaRabbit(wr, requestPayload.Log)
 	default:
 		c.errorJson(wr, errors.New("action undefined"))
 	}
@@ -101,7 +103,7 @@ func (c *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 	logServiceURL := "http://logger-service/log"
 
 	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
-	if err != nil {	
+	if err != nil {
 		c.errorJson(w, err)
 		return
 	}
@@ -128,4 +130,35 @@ func (c *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 
 	c.writeJson(w, http.StatusAccepted, payload)
 
+}
+func (c *Config) logItemViaRabbit(wr http.ResponseWriter, l LogPayload) {
+	err := c.pushToQueue(l.Name, l.Data)
+	if err != nil {
+		c.errorJson(wr, err)
+	}
+	response := jsonResponse{
+		Error:   false,
+		Message: "logged via rabbit",
+	}
+
+	c.writeJson(wr, http.StatusAccepted, response)
+}
+func (c *Config) pushToQueue(name, msg string) error {
+	emitter, err := event.NewEventEmitter(c.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: msg,
+	}
+
+	j, _ := json.MarshalIndent(&payload, "", "\t")
+
+	err = emitter.Push(string(j), "log.INFO")
+	if err != nil {
+		return err
+	}
+	return nil
 }
