@@ -11,17 +11,20 @@ import (
 const mongoURL = "mongodb://mongo:27017"
 
 func ConnectToMongo() (*mongo.Client, error) {
-	//connect options
+	// create connection options
 	clientOptions := options.Client().ApplyURI(mongoURL)
 	clientOptions.SetAuth(options.Credential{
 		Username: "admin",
-		Password: "admin",
+		Password: "password",
 	})
+	// connect
 	conn, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Println("error: connecting mongo")
 		return nil, err
 	}
+
+	log.Println("Connected to mongo!")
 
 	return conn, nil
 }

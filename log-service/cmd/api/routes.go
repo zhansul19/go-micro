@@ -1,33 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
+	"github.com/zhansul19/go-micro/log-service/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/zhansul19/log-service/database"
 )
 
 type Config struct {
 	Models database.Models
 }
 
-func (c *Config) serve() {
-	srv := http.Server{
-		Addr:    fmt.Sprintf(":%s", webPort),
-		Handler: c.routes(),
-	}
-	err := srv.ListenAndServe()
-	if err != nil {
-		log.Panic(err)
-	}
-}
-func (c *Config) routes() http.Handler {
-	mux := chi.NewMux()
+func (app *Config) routes() http.Handler {
+	mux := chi.NewRouter()
 
+	// specify who is allowed to connect
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -38,7 +27,8 @@ func (c *Config) routes() http.Handler {
 	}))
 
 	mux.Use(middleware.Heartbeat("/ping"))
-	mux.Post("/log", c.Writelog)
+
+	mux.Post("/log", app.WriteLog)
 
 	return mux
 }

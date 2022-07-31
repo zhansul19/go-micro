@@ -8,42 +8,47 @@ import (
 )
 
 type jsonResponse struct {
-	Error   bool   `json:"error"`
+	Error bool `json:"error"`
 	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
-func (c *Config) readJson(wr http.ResponseWriter, r *http.Request, data interface{}) error {
-	maxBytes := int64(1048576) //1MB
+// readJSON tries to read the body of a request and converts it into JSON
+func (app *Config) readJSON(w http.ResponseWriter, r *http.Request, data any) error {
+	maxBytes := 1048576 // one megabyte
 
-	r.Body = http.MaxBytesReader(wr, r.Body, maxBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
-	decode := json.NewDecoder(r.Body)
-	err := decode.Decode(data)
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(data)
 	if err != nil {
 		return err
 	}
 
-	err = decode.Decode(&struct{}{})
+	err = dec.Decode(&struct{}{})
 	if err != io.EOF {
-		return errors.New("body cannot have more than 1 JSON value")
+		return errors.New("body must have only a single JSON value")
 	}
+
 	return nil
 }
-func (c *Config) writeJson(wr http.ResponseWriter, code int, data interface{}, headers ...http.Header) error {
+
+// writeJSON takes a response status code and arbitrary data and writes a json response to the client
+func (app *Config) writeJSON(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
 	if len(headers) > 0 {
-		for i, v := range headers[0] {
-			wr.Header()[i] = v
+		for key, value := range headers[0] {
+			w.Header()[key] = value
 		}
 	}
-	wr.Header().Set("Content-Type", "application/json")
-	wr.WriteHeader(code)
-	_, err = wr.Write(out)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, err = w.Write(out)
 	if err != nil {
 		return err
 	}
@@ -51,17 +56,18 @@ func (c *Config) writeJson(wr http.ResponseWriter, code int, data interface{}, h
 	return nil
 }
 
-func (c *Config) errorJson(wr http.ResponseWriter, err error, code ...int) error {
-	statuscode := http.StatusBadRequest
+// errorJSON takes an error, and optionally a response status code, and generates and sends
+// a json error response
+func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) error {
+	statusCode := http.StatusBadRequest
 
-	if len(code) > 0 {
-		statuscode = code[0]
+	if len(status) > 0 {
+		statusCode = status[0]
 	}
 
-	payload := jsonResponse{
-		Error:   true,
-		Message: err.Error(),
-	}
+	var payload jsonResponse
+	payload.Error = true
+	payload.Message = err.Error()
 
-	return c.writeJson(wr, statuscode, payload)
+	return app.writeJSON(w, statusCode, payload)
 }
